@@ -1,3 +1,4 @@
+import App from "../App.js";
 import jsTPS_Transaction from "../common/jsTPS.js"
 /**
  * MoveSong_Transaction
@@ -9,7 +10,11 @@ import jsTPS_Transaction from "../common/jsTPS.js"
  * @author ?
  */
 export default class MoveSong_Transaction extends jsTPS_Transaction {
-    constructor(initApp, initOldSongIndex, initNewSongIndex) {
+    app: App;
+    oldSongIndex: number;
+    newSongIndex: number;
+
+    constructor(initApp: App, initOldSongIndex: number, initNewSongIndex: number) {
         super();
         this.app = initApp;
         this.oldSongIndex = initOldSongIndex;

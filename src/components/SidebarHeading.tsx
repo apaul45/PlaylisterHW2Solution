@@ -1,10 +1,11 @@
 import React from "react";
 
-export default class SidebarHeading extends React.Component {
-    handleClick = (event) => {
-        const { createNewListCallback } = this.props;
-        createNewListCallback();
-    };
+export default class SidebarHeading extends React.Component<{createNewListCallback : any}> {
+    
+    handleClick = (event: any) => {
+        this.props.createNewListCallback();
+    }
+
     render() {
         return (
             <div id="sidebar-heading">

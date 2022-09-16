@@ -10,7 +10,7 @@ function isInLocalStorage() {
   return localStorage.getItem("playlister-data") != null;
 }
 
-function loadListsFromJSON(jsonFilePath) {
+function loadListsFromJSON(jsonFilePath: string | URL) {
   let xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function () {
     if (this.readyState === 4 && this.status === 200) {
