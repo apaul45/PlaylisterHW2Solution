@@ -18,7 +18,7 @@ export default function DeleteSongModal(props: Props) {
                 </div>
                 <div className="modal-center">
                     <div className="modal-center-content">
-                        Are you sure you wish to permanently delete the {props.songToDelete?.title} song?
+                        Are you sure you wish to permanently delete the <b> {props.songToDelete?.title} </b> song?
                     </div>
                 </div>
                 <div className="modal-south">

@@ -19,7 +19,7 @@ export default class DeleteListModal extends Component<Props> {
                         </div>
                         <div className="modal-center">
                             <div className="modal-center-content">
-                                Are you sure you wish to permanently delete the {this.props.listName} playlist?
+                                Are you sure you wish to permanently delete the <b> {this.props.listName} </b> playlist?
                             </div>
                         </div>
                         <div className="modal-south">
