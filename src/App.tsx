@@ -30,7 +30,10 @@ interface State {
     songMarkedForDeletion: number,
     songMarkedForEdit: number,
     currentList: Playlist | null,
-    sessionData: any
+    sessionData: any,
+    canUndo: boolean, 
+    canRedo: boolean, 
+    canClose: boolean
 }
 
 interface Props {}
@@ -57,7 +60,10 @@ class App extends React.Component<Props, State> {
             songMarkedForDeletion: -1,
             songMarkedForEdit: -1,
             currentList : null,
-            sessionData : loadedSessionData
+            sessionData : loadedSessionData,
+            canUndo: false, 
+            canRedo: false, 
+            canClose: false
         }
     }
     sortKeyNamePairsByName = (keyNamePairs: Array<Playlist>) => {
@@ -66,6 +72,28 @@ class App extends React.Component<Props, State> {
             return keyPair1.name.localeCompare(keyPair2.name);
         });
     }
+
+    handleKeyDown = (event: KeyboardEvent) => {
+        if (event.ctrlKey){
+            if (event.keyCode === 90){
+                this.undo();
+                this.editToolbar();
+            }
+            else{
+                if (event.keyCode === 89){
+                    this.redo();
+                    this.editToolbar();
+                }
+            }
+        }
+    }
+    componentDidMount(){
+        document.addEventListener('keydown', this.handleKeyDown);
+    }
+    componentWillUnmount(){
+        document.removeEventListener('keydown', this.handleKeyDown);
+    }
+
     // THIS FUNCTION BEGINS THE PROCESS OF CREATING A NEW LIST
     createNewList = () => {
         // FIRST FIGURE OUT WHAT THE NEW LIST'S KEY AND NAME WILL BE
@@ -80,7 +108,7 @@ class App extends React.Component<Props, State> {
         };
 
         // MAKE THE KEY,NAME OBJECT SO WE CAN KEEP IT IN OUR
-        // SESSION DATA SO IT WILL BE IN OUR LIST OF LISTS
+        // SESSION DATA SO IT WILL BE IN OUR LIST OF LISTSte
         let newKeyNamePair = { "key": newKey, "name": newName };
         let updatedPairs = [...this.state.sessionData.keyNamePairs, newKeyNamePair];
         this.sortKeyNamePairsByName(updatedPairs);
@@ -106,6 +134,8 @@ class App extends React.Component<Props, State> {
 
             // SO IS STORING OUR SESSION DATA
             this.db.mutationUpdateSessionData(this.state.sessionData);
+
+            this.editToolbar();
         });
     }
     // THIS FUNCTION BEGINS THE PROCESS OF DELETING A LIST.
@@ -141,6 +171,7 @@ class App extends React.Component<Props, State> {
 
             // SO IS STORING OUR SESSION DATA
             this.db.mutationUpdateSessionData(this.state.sessionData);
+            this.editToolbar();
         });
     }
     deleteMarkedList = () => {
@@ -184,6 +215,7 @@ class App extends React.Component<Props, State> {
             list.name = newName;
             this.db.mutationUpdateList(list);
             this.db.mutationUpdateSessionData(this.state.sessionData);
+            this.editToolbar();
         });
     }
     // THIS FUNCTION BEGINS THE PROCESS OF LOADING A LIST FOR EDITING
@@ -197,6 +229,7 @@ class App extends React.Component<Props, State> {
             // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
             // THE TRANSACTION STACK IS CLEARED
             this.tps.clearAllTransactions();
+            this.editToolbar();
         });
     }
     // THIS FUNCTION BEGINS THE PROCESS OF CLOSING THE CURRENT LIST
@@ -209,6 +242,7 @@ class App extends React.Component<Props, State> {
             // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
             // THE TRANSACTION STACK IS CLEARED
             this.tps.clearAllTransactions();
+            this.editToolbar();
         });
     }
     setStateWithUpdatedList(list: Playlist) {
@@ -220,6 +254,7 @@ class App extends React.Component<Props, State> {
             // UPDATING THE LIST IN PERMANENT STORAGE
             // IS AN AFTER EFFECT
             this.db.mutationUpdateList(this.state.currentList);
+            this.editToolbar();
         });
     }
     getPlaylistSize = () => {
@@ -266,6 +301,7 @@ class App extends React.Component<Props, State> {
         }), () => {
             this.db.mutationUpdateList(this.state.currentList);
             this.db.mutationUpdateSessionData(this.state.sessionData);
+            this.editToolbar();
         });
     }
 
@@ -278,13 +314,13 @@ class App extends React.Component<Props, State> {
         console.log("reached");
         this.setState({
             songMarkedForDeletion: index
+        }, () => {
+            this.editToolbar();
         });
     }
 
     hideDeleteSongModal = () => {
-        this.setState({
-            songMarkedForDeletion: -1
-        });
+        this.showDeleteSongModal(-1);
     }
 
     deleteSongAtIndex(index: number) {
@@ -297,6 +333,7 @@ class App extends React.Component<Props, State> {
         }), () => {
             this.db.mutationUpdateList(this.state.currentList);
             this.db.mutationUpdateSessionData(this.state.sessionData);
+            this.editToolbar();
         });
     }
     
@@ -309,7 +346,7 @@ class App extends React.Component<Props, State> {
     setSongToEdit = (index: number) => {
         this.setState({
             songMarkedForEdit: index
-        });
+        }, () => this.editToolbar());
     }
 
     editSongAtIndex = (song: Song, index: number) => {
@@ -322,6 +359,7 @@ class App extends React.Component<Props, State> {
         }), () => {
             this.db.mutationUpdateList(this.state.currentList);
             this.db.mutationUpdateSessionData(this.state.sessionData);
+            this.editToolbar();
         });
     }
 
@@ -338,6 +376,7 @@ class App extends React.Component<Props, State> {
 
             // MAKE SURE THE LIST GETS PERMANENTLY UPDATED
             this.db.mutationUpdateList(this.state.currentList);
+            this.editToolbar();
         }
     }
     // THIS FUNCTION BEGINS THE PROCESS OF PERFORMING A REDO
@@ -347,6 +386,7 @@ class App extends React.Component<Props, State> {
 
             // MAKE SURE THE LIST GETS PERMANENTLY UPDATED
             this.db.mutationUpdateList(this.state.currentList);
+            this.editToolbar();
         }
     }
     markListForDeletion = (keyPair: Playlist) => {
@@ -357,6 +397,7 @@ class App extends React.Component<Props, State> {
         }), () => {
             // PROMPT THE USER
             this.showDeleteListModal();
+            this.editToolbar();
         });
     }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
@@ -368,6 +409,15 @@ class App extends React.Component<Props, State> {
     hideDeleteListModal() {
         document.getElementById("delete-list-modal")!.classList.remove("is-visible");
     }
+
+    editToolbar = () => {
+        this.setState({
+            canUndo: this.tps.hasTransactionToUndo(),
+            canRedo: this.tps.hasTransactionToRedo(),
+            canClose: this.state.currentList !== null
+        });
+    }
+
     render() {
         return (
             <div id="root">
@@ -384,9 +434,9 @@ class App extends React.Component<Props, State> {
                 />
                 <EditToolbar
                     canAddSong={this.state.currentList !== null}
-                    canUndo={this.tps.hasTransactionToUndo()}
-                    canRedo={this.tps.hasTransactionToRedo()}
-                    canClose={this.state.currentList !== null}
+                    canUndo={this.state.canUndo}
+                    canRedo={this.state.canRedo}
+                    canClose={this.state.canClose}
                     addSongCallback={this.addSongTransaction}
                     undoCallback={this.undo}
                     redoCallback={this.redo}
